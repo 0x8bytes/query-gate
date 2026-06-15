@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "golang",
+  "steps": {
+    "build": {
+      "env": {
+        "RAILPACK_GO_BIN": "querygate"
+      }
+    }
+  },
+  "deploy": {
+    "startCommand": "sh -c 'if [ -n \"$CONFIG_YAML\" ]; then printf \"%s\" \"$CONFIG_YAML\" > config.yaml; fi; ./out -config ./config.yaml'"
+  }
+}

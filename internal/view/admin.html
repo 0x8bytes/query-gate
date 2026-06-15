@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QueryGate 管理后台</title>
+<style>
+  :root{--bg:#fff;--bg2:#fafafa;--bd:#ebebeb;--fg:#1a1a1a;--fg2:#8a8a8a;--accent:#2563eb;--accent2:#1d4ed8;--sel:#eef2ff;--danger:#dc2626;--mono:#f7f7f8}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+       background:var(--bg);color:var(--fg);font-size:14px;display:flex;flex-direction:column}
+  /* top bar */
+  .topbar{display:flex;align-items:center;gap:18px;padding:0 16px;height:48px;border-bottom:1px solid var(--bd);flex:0 0 auto}
+  .brand{font-weight:600;font-size:15px;margin-right:6px;color:var(--fg);text-decoration:none;cursor:pointer}
+  .brand:hover{color:var(--accent)}
+  .tabs{display:flex;gap:2px}
+  .tab{padding:8px 12px;border:0;background:none;color:var(--fg2);font-size:14px;cursor:pointer;border-bottom:2px solid transparent;border-radius:0}
+  .tab:hover{color:var(--fg)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .spacer{flex:1}
+  .whoami{font-size:13px;color:var(--fg2)}
+  .whoami b{color:var(--fg);font-weight:600}
+  .rolechip{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;font-size:12px;border:1px solid var(--bd);background:var(--bg2)}
+  .rolechip.super{color:var(--accent);border-color:#c7d2fe;background:var(--sel)}
+  .logout{padding:6px 12px;border:1px solid var(--bd);background:var(--bg);border-radius:6px;cursor:pointer;font-size:13px;color:var(--fg)}
+  .logout:hover{background:var(--bg2)}
+  /* sections */
+  main{flex:1;min-height:0;display:flex;flex-direction:column}
+  section{display:none;flex:1;min-height:0}
+  section.active{display:flex}
+  /* generic */
+  button.btn{padding:7px 12px;background:var(--accent);color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:13px}
+  button.btn:hover{background:var(--accent2)}
+  button.ghost{padding:6px 10px;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:6px;cursor:pointer;font-size:13px}
+  button.ghost:hover{background:var(--bg2)}
+  button.del{padding:5px 10px;background:var(--bg);color:var(--danger);border:1px solid var(--bd);border-radius:6px;cursor:pointer;font-size:13px}
+  button.del:hover{background:#fef2f2}
+  input.inp,select.inp{padding:8px 10px;border:1px solid var(--bd);border-radius:6px;font-size:13px;font-family:inherit}
+  input.inp:focus,select.inp:focus{outline:none;border-color:var(--accent)}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--bd);vertical-align:top}
+  thead th{color:var(--fg);font-weight:600;background:var(--bg2);position:sticky;top:0}
+  tbody tr:hover{background:var(--bg2)}
+  .muted{color:var(--fg2)}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+  .hint{color:var(--fg2);font-size:12px;margin-top:4px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  /* 个人中心信息行：标签定宽 + 值同行，紧凑 */
+  .merow{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--bd)}
+  .merow:last-of-type{border-bottom:0}
+  .melab{flex:0 0 72px;color:var(--fg2);font-size:13px}
+  .mekey{flex:1;background:#fff;border:1px solid var(--bd);border-radius:6px;padding:6px 10px}
+  .okstrip{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
+  .warnstrip{background:#fffbeb;border:1px solid #fde68a;color:#b45309;padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
+  .errstrip{background:#fef2f2;border:1px solid #fecaca;color:var(--danger);padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
+  /* === section 1: 表浏览 === */
+  #s-browse{flex-direction:row}
+  .tree{width:260px;flex:0 0 260px;background:var(--bg2);border-right:1px solid var(--bd);overflow:auto;padding:6px 0}
+  .tnode{padding:5px 12px;cursor:pointer;white-space:nowrap;user-select:none}
+  .tnode:hover{background:#f0f0f0}
+  .tnode .drv{color:var(--fg2);font-size:12px;margin-left:6px}
+  .tchild{display:none}
+  .tchild.open{display:block}
+  .tcat{padding:4px 12px 4px 24px;color:var(--fg2);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  .tleaf{padding:4px 12px 4px 30px;cursor:pointer;white-space:nowrap}
+  .tleaf:hover{background:#f0f0f0}
+  .tleaf.sel{background:var(--sel);color:var(--accent)}
+  .tleaf .cmt{color:var(--fg2);font-size:12px;margin-left:6px}
+  .rpane{flex:1;min-width:0;display:flex;flex-direction:column}
+  .subtabs{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--bd)}
+  .subtab{padding:7px 12px;border:0;background:none;color:var(--fg2);cursor:pointer;border-bottom:2px solid transparent;font-size:13px}
+  .subtab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .sub-pane{display:none;flex:1;min-height:0;flex-direction:column;overflow:auto;padding:12px}
+  .sub-pane.active{display:flex}
+  textarea.sql{width:100%;min-height:80px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:var(--mono);border:1px solid var(--bd);border-radius:6px;padding:10px;resize:vertical}
+  textarea.sql:focus{outline:none;border-color:var(--accent)}
+  .runrow{display:flex;align-items:center;gap:12px;margin:8px 0}
+  .rowcount{color:var(--fg2);font-size:13px}
+  .resultwrap{flex:1;overflow:auto;border:1px solid var(--bd);border-radius:6px}
+  th.sortable{cursor:pointer}
+  th.sortable:hover{color:var(--accent)}
+  pre.ddl{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:var(--mono);border:1px solid var(--bd);border-radius:6px;padding:12px;overflow:auto;white-space:pre;margin:0}
+  /* panels / forms */
+  .panel{padding:16px;overflow:auto;flex:1}
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .formcard{background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:14px;margin-bottom:14px;max-width:520px}
+  .formcard .frow{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+  .formcard label{font-size:13px;color:var(--fg)}
+  .hidden{display:none}
+  .keycard{background:var(--sel);border:1px solid #c7d2fe;border-radius:6px;padding:14px;margin-bottom:14px;max-width:560px}
+  .keycard .kv{font-family:ui-monospace,monospace;font-size:13px;background:#fff;border:1px solid var(--bd);border-radius:6px;padding:8px 10px;word-break:break-all;margin:6px 0}
+  .st-ok{color:#15803d}
+  .st-bad{color:var(--danger)}
+  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;border:1px solid var(--bd)}
+  .badge.en{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
+  .badge.dis{color:var(--fg2);background:#f4f4f5}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="brand" href="/" title="返回首页">QueryGate</a>
+    <div class="tabs" id="tabs"></div>
+    <div class="spacer"></div>
+    <span class="whoami" id="whoami"></span>
+    <button class="logout" id="logoutBtn">退出</button>
+  </div>
+
+  <main>
+    <!-- ===== Section 1: 表浏览 ===== -->
+    <section id="s-browse" class="active">
+      <div class="tree" id="tree"></div>
+      <div class="rpane">
+        <div class="subtabs">
+          <button class="subtab active" data-sub="data">Data</button>
+          <button class="subtab" data-sub="ddl">DDL</button>
+        </div>
+        <div class="sub-pane active" id="pane-data">
+          <textarea class="sql" id="sqlBox" placeholder='SQL（mysql/pg）或 Mongo JSON {"collection":"...","find":{}}'></textarea>
+          <div class="runrow">
+            <button class="btn" id="runBtn">运行</button>
+            <span class="rowcount" id="rowCount"></span>
+          </div>
+          <div id="dataErr"></div>
+          <div class="resultwrap"><table id="resultTbl"></table></div>
+        </div>
+        <div class="sub-pane" id="pane-ddl">
+          <pre class="ddl" id="ddlBox">请先在左侧选择一张表</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Section 2: 数据库连接（仅超管） ===== -->
+    <section id="s-dbs">
+      <div class="panel">
+        <div class="toolbar">
+          <button class="btn" id="dbNewBtn">新建连接</button>
+        </div>
+        <div class="formcard hidden" id="dbForm">
+          <div class="frow"><label>name（连接别名）</label><input class="inp" id="dbName" placeholder="如 mydb"><div class="hint">这是你给连接起的代号，查询时用它指定连接；与真实库名无关，真实库名写在下面 read dsn 里。</div></div>
+          <div class="frow"><label>driver</label>
+            <select class="inp" id="dbDriver"><option value="mysql">mysql</option><option value="postgres">postgres</option><option value="mongodb">mongodb</option></select>
+          </div>
+          <div class="frow"><label>read dsn</label><input class="inp" id="dbDsn"><div class="hint" id="dbDsnHint"></div></div>
+          <div class="frow"><label>write dsn（可选）</label><input class="inp" id="dbExecDsn" placeholder="写账号 DSN，留空=该库不支持写操作"><div class="hint">仅超级管理员执行写操作（/exec）使用，请用具备写权限的账号；留空则该库只读。</div></div>
+          <div class="frow"><label>description</label><input class="inp" id="dbDesc"></div>
+          <div id="dbFormErr"></div>
+          <div style="display:flex;gap:8px"><button class="btn" id="dbSaveBtn">创建</button><button class="ghost" id="dbTestBtn">测试连接</button><button class="ghost" id="dbCancelBtn">取消</button></div>
+        </div>
+        <div class="formcard hidden" id="dbEditForm">
+          <div class="frow"><label>name</label><input class="inp" id="edName" disabled></div>
+          <div class="frow"><label>driver</label><input class="inp" id="edDriver" disabled></div>
+          <div class="frow"><label>read dsn</label><input class="inp" id="edDsn"><div class="hint">已回填当前值；read dsn 必填，留空保存则保留原值。</div></div>
+          <div class="frow"><label>write dsn</label><input class="inp" id="edExecDsn" placeholder="留空=移除该库写能力"><div class="hint">已回填当前值；改它即覆盖，清空则移除该库写能力。</div></div>
+          <div class="frow"><label>description（备注）</label><input class="inp" id="edDesc"></div>
+          <div id="dbEditErr"></div>
+          <div style="display:flex;gap:8px"><button class="btn" id="edSaveBtn">保存</button><button class="ghost" id="edCancelBtn">取消</button></div>
+        </div>
+        <table id="dbTbl"></table>
+      </div>
+    </section>
+
+    <!-- ===== Section 3: 用户管理（仅超管） ===== -->
+    <section id="s-users">
+      <div class="panel">
+        <div class="toolbar">
+          <button class="btn" id="userNewBtn">新建用户</button>
+        </div>
+        <div class="formcard hidden" id="userForm">
+          <div class="frow"><label>username</label><input class="inp" id="uName"></div>
+          <div class="frow"><label>password</label><input class="inp" id="uPass" type="password"></div>
+          <div class="frow"><label>role</label>
+            <select class="inp" id="uRole"><option value="user">普通用户 (user)</option><option value="super_admin">超管 (super_admin)</option></select>
+          </div>
+          <div id="userFormErr"></div>
+          <div style="display:flex;gap:8px"><button class="btn" id="uSaveBtn">创建</button><button class="ghost" id="uCancelBtn">取消</button></div>
+        </div>
+        <div id="userReveal"></div>
+        <div id="userErr"></div>
+        <table id="userTbl"></table>
+      </div>
+    </section>
+
+    <!-- ===== Section 4: 查询日志（仅超管） ===== -->
+    <section id="s-logs">
+      <div class="panel">
+        <div class="toolbar">
+          <button class="ghost" id="logRefresh">刷新</button>
+        </div>
+        <div id="logErr"></div>
+        <table id="logTbl"></table>
+      </div>
+    </section>
+
+    <!-- ===== Section: Exec（仅超管，写操作） ===== -->
+    <section id="s-exec">
+      <div class="panel">
+        <div class="frow"><label>连接（仅显示已配 write dsn 的库）</label>
+          <select class="inp" id="execDb" style="max-width:320px"></select>
+        </div>
+        <textarea class="sql" id="execSql" placeholder='写操作 SQL（mysql/pg）或 Mongo 命令 JSON。仅超级管理员，走写库连接，不经 guard。'></textarea>
+        <div class="runrow">
+          <button class="btn" id="execRunBtn">执行</button>
+        </div>
+        <div id="execErr"></div>
+        <pre class="ddl" id="execResult"></pre>
+      </div>
+    </section>
+
+    <!-- ===== Section 5: 个人中心（所有角色） ===== -->
+    <section id="s-me">
+      <div class="panel">
+        <div class="formcard" style="max-width:560px">
+          <div class="merow"><span class="melab">用户名</span><span class="mono" id="meName"></span></div>
+          <div class="merow"><span class="melab">角色</span><span id="meRole"></span></div>
+          <div class="merow"><span class="melab">api_key</span><span class="mono mekey" id="meKey"></span></div>
+          <div class="hint" style="margin-left:84px">如需重置 api_key 请联系超管</div>
+        </div>
+
+        <div class="formcard" style="max-width:560px">
+          <div class="frow"><label>修改密码</label></div>
+          <div class="frow"><input class="inp" id="meOldPass" type="password" placeholder="旧密码"></div>
+          <div class="frow"><input class="inp" id="meNewPass" type="password" placeholder="新密码"></div>
+          <div id="mePassErr"></div>
+          <div><button class="btn" id="mePassBtn">保存密码</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+async function api(path, body){
+  const res = await fetch('/api/v1/admin/ui'+path, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body||{})
+  });
+  if(res.status===401){ location='/admin/login'; throw new Error('unauthorized'); }
+  const data = await res.json();
+  if(!res.ok){ throw new Error((data.error&&data.error.message)||('HTTP '+res.status)); }
+  return data;
+}
+
+/* role/username state，由 /me 提供（权威来源） */
+let ME={username:'', role:''};
+const ROLE_CN={super_admin:'超管', user:'普通用户'};
+function roleCN(r){ return ROLE_CN[r]||r||''; }
+
+/* 各 tab 定义：super 标记为仅超管可见 */
+const TABS=[
+  {sec:'browse', label:'数据查询'},
+  {sec:'dbs',    label:'数据库连接', super:true},
+  {sec:'users',  label:'用户管理',   super:true},
+  {sec:'logs',   label:'查询日志',   super:true},
+  {sec:'exec',   label:'Exec',       super:true},
+  {sec:'me',     label:'个人中心'},
+];
+
+/* ---- tab switching + lazy load ---- */
+function showSection(sec){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.sec===sec));
+  document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById('s-'+sec); if(el) el.classList.add('active');
+  initSection(sec); // 每次切入都刷新列表数据
+}
+function initSection(sec){
+  if(sec==='browse') loadTree();
+  else if(sec==='dbs') loadDbs();
+  else if(sec==='users') loadUsers();
+  else if(sec==='logs') loadLogs();
+  else if(sec==='exec') loadExecDbs();
+  else if(sec==='me') loadMe();
+}
+
+/* 根据角色构建 tab 按钮 */
+function buildTabs(){
+  const isSuper = ME.role==='super_admin';
+  const tabsEl=document.getElementById('tabs');
+  tabsEl.innerHTML='';
+  TABS.filter(t=>!t.super || isSuper).forEach((t,i)=>{
+    const b=document.createElement('button');
+    b.className='tab'+(i===0?' active':'');
+    b.dataset.sec=t.sec;
+    b.textContent=t.label;
+    b.addEventListener('click',()=>showSection(t.sec));
+    tabsEl.appendChild(b);
+  });
+}
+
+/* 顶栏用户名 + 角色 */
+function renderWhoami(){
+  const sup = ME.role==='super_admin';
+  document.getElementById('whoami').innerHTML =
+    '<b>'+esc(ME.username)+'</b><span class="rolechip'+(sup?' super':'')+'">'+esc(roleCN(ME.role))+'</span>';
+}
+
+/* ---- logout ---- */
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  try{ await fetch('/admin/logout',{method:'POST'}); }catch(e){}
+  location='/admin/login';
+});
+
+/* ===================== Section 1: 表浏览 ===================== */
+const tree = document.getElementById('tree');
+const sqlBox = document.getElementById('sqlBox');
+const resultTbl = document.getElementById('resultTbl');
+const rowCountEl = document.getElementById('rowCount');
+const dataErr = document.getElementById('dataErr');
+const ddlBox = document.getElementById('ddlBox');
+let currentDB=null, currentTable=null, currentDriver=null;
+let sortCol=null, sortDir='ASC';
+
+async function loadTree(){
+  tree.innerHTML='';
+  let data;
+  try{ data = await api('/tree',{}); }
+  catch(e){ tree.innerHTML='<div class="tcat">'+esc(e.message)+'</div>'; return; }
+  (data.databases||[]).forEach(db=>{
+    const node=document.createElement('div'); node.className='tnode';
+    node.innerHTML=esc(db.name)+'<span class="drv">'+esc(db.driver||'')+'</span>';
+    const child=document.createElement('div'); child.className='tchild';
+    let childLoaded=false;
+    node.addEventListener('click', async ()=>{
+      child.classList.toggle('open');
+      if(!childLoaded && child.classList.contains('open')){
+        childLoaded=true;
+        child.innerHTML='<div class="tcat">加载中…</div>';
+        let t;
+        try{ t = await api('/tree',{db:db.name}); }
+        catch(e){ child.innerHTML='<div class="tcat">'+esc(e.message)+'</div>'; return; }
+        child.innerHTML='';
+        (t.categories||[]).forEach(cat=>{
+          const ch=document.createElement('div'); ch.className='tcat'; ch.textContent=cat.name;
+          child.appendChild(ch);
+          (cat.tables||[]).forEach(tb=>{
+            const leaf=document.createElement('div'); leaf.className='tleaf';
+            leaf.innerHTML=esc(tb.name)+(tb.comment?'<span class="cmt">'+esc(tb.comment)+'</span>':'');
+            leaf.addEventListener('click',(ev)=>{
+              ev.stopPropagation();
+              document.querySelectorAll('.tleaf.sel').forEach(x=>x.classList.remove('sel'));
+              leaf.classList.add('sel');
+              selectTable(db.name, tb.name, db.driver);
+            });
+            child.appendChild(leaf);
+          });
+        });
+      }
+    });
+    tree.appendChild(node); tree.appendChild(child);
+  });
+}
+
+function selectTable(db, table, driver){
+  currentDB=db; currentTable=table; currentDriver=driver;
+  sortCol=null; sortDir='ASC';
+  sqlBox.value=defaultQuery(driver, table);
+  showSubtab('data');
+  runQuery();
+}
+
+// defaultQuery 按 driver 给出点表后的默认查询：
+// mongodb 用 Mongo JSON 语法（不认 SQL），其余用 SQL。
+function defaultQuery(driver, table){
+  if(driver==='mongodb'){
+    return JSON.stringify({collection:table, find:{}});
+  }
+  return 'select * from '+table+' limit 50';
+}
+
+/* subtabs */
+function showSubtab(sub){
+  document.querySelectorAll('.subtab').forEach(t=>t.classList.toggle('active', t.dataset.sub===sub));
+  document.getElementById('pane-data').classList.toggle('active', sub==='data');
+  document.getElementById('pane-ddl').classList.toggle('active', sub==='ddl');
+  if(sub==='ddl') loadDDL();
+}
+document.querySelectorAll('.subtab').forEach(t=>t.addEventListener('click',()=>showSubtab(t.dataset.sub)));
+
+function quoteIdent(col, driver){
+  if(driver==='mysql') return '`'+String(col).replace(/`/g,'``')+'`';
+  if(driver==='postgres') return '"'+String(col).replace(/"/g,'""')+'"';
+  return col;
+}
+
+document.getElementById('runBtn').addEventListener('click',()=>{ sortCol=null; sortDir='ASC'; runQuery(); });
+
+async function runQuery(){
+  if(!currentDB){ return; }
+  dataErr.innerHTML='';
+  const baseSQL = sqlBox.value;
+  let sql = baseSQL;
+  if(sortCol){
+    sql = 'SELECT * FROM ('+baseSQL+') AS _qn ORDER BY '+quoteIdent(sortCol, currentDriver)+' '+sortDir;
+  }
+  let data;
+  try{ data = await api('/query',{db:currentDB, sql}); }
+  catch(e){ dataErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; return; }
+  renderResult(data);
+}
+
+function renderResult(data){
+  const cols = data.columns||[];
+  const rows = data.rows||[];
+  rowCountEl.textContent = (data.row_count!=null?data.row_count:rows.length)+' rows';
+  const noSort = (currentDriver==='mongodb');
+  let h='<thead><tr>';
+  cols.forEach(c=>{
+    if(noSort){ h+='<th>'+esc(c)+'</th>'; }
+    else{
+      let ind=''; if(sortCol===c) ind = sortDir==='ASC'?' ▲':' ▼';
+      h+='<th class="sortable" data-col="'+esc(c)+'">'+esc(c)+ind+'</th>';
+    }
+  });
+  h+='</tr></thead><tbody>';
+  rows.forEach(r=>{
+    h+='<tr>';
+    cols.forEach((c,i)=>{
+      const v=r[i];
+      h+= (v==null) ? '<td class="muted">NULL</td>' : '<td>'+esc(v)+'</td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody>';
+  resultTbl.innerHTML=h;
+  if(!noSort){
+    resultTbl.querySelectorAll('th.sortable').forEach(th=>{
+      th.addEventListener('click',()=>onSort(th.dataset.col));
+    });
+  }
+}
+
+function onSort(col){
+  // three-state: ASC -> DESC -> clear
+  if(sortCol!==col){ sortCol=col; sortDir='ASC'; }
+  else if(sortDir==='ASC'){ sortDir='DESC'; }
+  else { sortCol=null; sortDir='ASC'; }
+  runQuery();
+}
+
+async function loadDDL(){
+  if(!currentTable){ ddlBox.textContent='请先在左侧选择一张表'; return; }
+  ddlBox.textContent='加载中…';
+  try{ const d=await api('/ddl',{db:currentDB,table:currentTable}); ddlBox.textContent=d.ddl||''; }
+  catch(e){ ddlBox.textContent=e.message; }
+}
+
+/* ===================== Section 2: 数据库连接（仅超管） ===================== */
+const dbTbl=document.getElementById('dbTbl');
+const dbForm=document.getElementById('dbForm');
+const dbFormErr=document.getElementById('dbFormErr');
+const dbDsnHint=document.getElementById('dbDsnHint');
+
+const DSN_FORMATS={
+  mysql:    {ph:'user:pass@tcp(host:3306)/<数据库名>',                       tip:'格式：user:pass@tcp(host:3306)/<数据库名>'},
+  postgres: {ph:'postgres://user:pass@host:5432/<数据库名>?sslmode=disable', tip:'格式：postgres://user:pass@host:5432/<数据库名>?sslmode=disable（本地 PG 无 SSL 用 disable）'},
+  mongodb:  {ph:'mongodb://user:pass@host:27017/<数据库名>',                 tip:'格式：mongodb://user:pass@host:27017/<数据库名>（必须含数据库名）'},
+};
+function refreshDsnHint(){
+  const f=DSN_FORMATS[dbDriver.value]||DSN_FORMATS.mysql;
+  dbDsn.placeholder=f.ph;
+  dbDsnHint.textContent=f.tip+' · 请使用只读账号';
+}
+dbDriver.addEventListener('change', refreshDsnHint);
+
+document.getElementById('dbNewBtn').addEventListener('click',()=>{ dbForm.classList.remove('hidden'); dbFormErr.innerHTML=''; refreshDsnHint(); });
+document.getElementById('dbCancelBtn').addEventListener('click',()=>dbForm.classList.add('hidden'));
+
+function dbFormBody(){
+  return { name:dbName.value.trim(), driver:dbDriver.value, dsn:dbDsn.value.trim(), exec_dsn:document.getElementById('dbExecDsn').value.trim(), description:dbDesc.value.trim() };
+}
+
+document.getElementById('dbTestBtn').addEventListener('click', async ()=>{
+  dbFormErr.innerHTML='';
+  const body=dbFormBody();
+  if(!body.dsn){ dbFormErr.innerHTML='<div class="errstrip">请先填写 dsn</div>'; return; }
+  const btn=document.getElementById('dbTestBtn');
+  btn.disabled=true; const old=btn.textContent; btn.textContent='测试中…';
+  try{
+    const r=await api('/databases/test', body);
+    if(r.ok){ dbFormErr.innerHTML='<div class="okstrip">连接成功 ✓</div>'; }
+    else{ dbFormErr.innerHTML='<div class="warnstrip">连接失败：'+esc(r.message||'无法连接')+'</div>'; }
+  }
+  catch(e){ dbFormErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; }
+  finally{ btn.disabled=false; btn.textContent=old; }
+});
+
+document.getElementById('dbSaveBtn').addEventListener('click', async ()=>{
+  dbFormErr.innerHTML='';
+  try{ await api('/databases/create', dbFormBody()); }
+  catch(e){ dbFormErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; return; }
+  dbForm.classList.add('hidden');
+  dbName.value=''; dbDsn.value=''; document.getElementById('dbExecDsn').value=''; dbDesc.value='';
+  loadDbs();
+});
+
+let DB_RECORDS={}; // name -> 完整记录（含 dsn/exec_dsn），供编辑回填
+async function loadDbs(){
+  let data;
+  try{ data=await api('/databases/list',{}); }
+  catch(e){ dbTbl.innerHTML='<tbody><tr><td class="errstrip">'+esc(e.message)+'</td></tr></tbody>'; return; }
+  DB_RECORDS={};
+  let h='<thead><tr><th>name</th><th>driver</th><th>description</th><th></th></tr></thead><tbody>';
+  (data.databases||[]).forEach(d=>{
+    DB_RECORDS[d.name]=d;
+    const execBadge = d.has_exec ? ' <span class="rolechip super">可写</span>' : '';
+    h+='<tr><td>'+esc(d.name)+'</td><td>'+esc(d.driver)+execBadge+'</td><td class="muted">'+esc(d.description||'')+
+       '</td><td style="white-space:nowrap"><button class="ghost" data-act="edit" data-name="'+esc(d.name)+
+       '">编辑</button> '+
+       '<button class="del" data-name="'+esc(d.name)+'">删除</button></td></tr>';
+  });
+  h+='</tbody>';
+  dbTbl.innerHTML=h;
+  dbTbl.querySelectorAll('button[data-act="edit"]').forEach(b=>b.addEventListener('click', ()=>{
+    openDbEdit(b.dataset.name);
+  }));
+  dbTbl.querySelectorAll('button.del').forEach(b=>b.addEventListener('click', async ()=>{
+    if(!confirm('删除连接 '+b.dataset.name+' ?')) return;
+    try{ await api('/databases/delete',{name:b.dataset.name}); loadDbs(); }
+    catch(e){ alert(e.message); }
+  }));
+}
+
+/* ----- 编辑连接 ----- */
+const dbEditForm=document.getElementById('dbEditForm');
+const dbEditErr=document.getElementById('dbEditErr');
+function openDbEdit(name){
+  const d=DB_RECORDS[name]||{};
+  edName.value=name; edDriver.value=d.driver||'';
+  edDsn.value=d.dsn||''; edDesc.value=d.description||'';
+  document.getElementById('edExecDsn').value=d.exec_dsn||'';
+  dbEditErr.innerHTML='';
+  dbForm.classList.add('hidden');
+  dbEditForm.classList.remove('hidden');
+}
+document.getElementById('edCancelBtn').addEventListener('click',()=>dbEditForm.classList.add('hidden'));
+document.getElementById('edSaveBtn').addEventListener('click', async ()=>{
+  dbEditErr.innerHTML='';
+  const body={ name:edName.value };
+  // read dsn:总是提交;空串时后端保留旧值(必填，防误清)。
+  body.dsn=edDsn.value.trim();
+  body.description=edDesc.value.trim();
+  // exec dsn:总是提交;空串=移除该库 exec 能力,有值=覆盖。
+  body.exec_dsn=document.getElementById('edExecDsn').value.trim();
+  try{ await api('/databases/update', body); }
+  catch(e){ dbEditErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; return; }
+  dbEditForm.classList.add('hidden');
+  loadDbs();
+});
+
+/* ===================== Section 3: 用户管理（仅超管） ===================== */
+const userTbl=document.getElementById('userTbl');
+const userForm=document.getElementById('userForm');
+const userFormErr=document.getElementById('userFormErr');
+const userReveal=document.getElementById('userReveal');
+const userErr=document.getElementById('userErr');
+
+document.getElementById('userNewBtn').addEventListener('click',()=>{ userForm.classList.remove('hidden'); userFormErr.innerHTML=''; });
+document.getElementById('uCancelBtn').addEventListener('click',()=>userForm.classList.add('hidden'));
+document.getElementById('uSaveBtn').addEventListener('click', async ()=>{
+  userFormErr.innerHTML='';
+  const username=uName.value.trim(), password=uPass.value, role=uRole.value;
+  if(!username || !password){ userFormErr.innerHTML='<div class="errstrip">用户名和密码必填</div>'; return; }
+  let data;
+  try{ data=await api('/users/create',{username, password, role}); }
+  catch(e){ userFormErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; return; }
+  userForm.classList.add('hidden'); uName.value=''; uPass.value='';
+  userReveal.innerHTML='<div class="keycard"><div><b>'+esc(data.username||username)+'</b> 已创建</div>'+
+    '<div class="muted">请保存此 api_key（仅显示一次）：</div>'+
+    '<div class="kv">'+esc(data.api_key)+'</div></div>';
+  loadUsers();
+});
+
+async function loadUsers(){
+  userErr.innerHTML='';
+  let data;
+  try{ data=await api('/users/list',{}); }
+  catch(e){ userTbl.innerHTML='<tbody><tr><td class="errstrip">'+esc(e.message)+'</td></tr></tbody>'; return; }
+  let h='<thead><tr><th>username</th><th>role</th><th>status</th><th>api_key</th><th>created_at</th><th></th></tr></thead><tbody>';
+  (data.users||[]).forEach(u=>{
+    const en = u.status==='enabled';
+    h+='<tr><td>'+esc(u.username)+'</td>'+
+       '<td>'+esc(roleCN(u.role))+'</td>'+
+       '<td><span class="badge '+(en?'en':'dis')+'">'+esc(en?'启用':'禁用')+'</span></td>'+
+       '<td class="mono">'+esc(u.api_key)+'</td>'+
+       '<td class="muted">'+esc(u.created_at||'')+'</td>'+
+       '<td style="white-space:nowrap">'+
+         '<button class="ghost" data-act="pw" data-name="'+esc(u.username)+'">重置密码</button> '+
+         '<button class="ghost" data-act="role" data-name="'+esc(u.username)+'" data-role="'+esc(u.role)+'">改角色</button> '+
+         '<button class="ghost" data-act="status" data-name="'+esc(u.username)+'" data-next="'+(en?'disabled':'enabled')+'">'+(en?'禁用':'启用')+'</button> '+
+         '<button class="del" data-act="del" data-name="'+esc(u.username)+'">删除</button>'+
+       '</td></tr>';
+  });
+  h+='</tbody>';
+  userTbl.innerHTML=h;
+  userTbl.querySelectorAll('button[data-act="pw"]').forEach(b=>b.addEventListener('click', async ()=>{
+    const pw=prompt('为 '+b.dataset.name+' 设置新密码：'); if(!pw) return;
+    try{ await api('/users/reset-password',{username:b.dataset.name, password:pw}); showUserOk('已重置 '+b.dataset.name+' 的密码'); }
+    catch(e){ userErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; }
+  }));
+  userTbl.querySelectorAll('button[data-act="role"]').forEach(b=>b.addEventListener('click', async ()=>{
+    const next = b.dataset.role==='super_admin' ? 'user' : 'super_admin';
+    if(!confirm('将 '+b.dataset.name+' 角色改为 '+roleCN(next)+'?')) return;
+    try{ await api('/users/set-role',{username:b.dataset.name, role:next}); loadUsers(); }
+    catch(e){ userErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; }
+  }));
+  userTbl.querySelectorAll('button[data-act="status"]').forEach(b=>b.addEventListener('click', async ()=>{
+    try{ await api('/users/set-status',{username:b.dataset.name, status:b.dataset.next}); loadUsers(); }
+    catch(e){ userErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; }
+  }));
+  userTbl.querySelectorAll('button[data-act="del"]').forEach(b=>b.addEventListener('click', async ()=>{
+    if(!confirm('删除用户 '+b.dataset.name+' ?')) return;
+    try{ await api('/users/delete',{username:b.dataset.name}); loadUsers(); }
+    catch(e){ userErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; }
+  }));
+}
+function showUserOk(msg){ userErr.innerHTML='<div class="okstrip">'+esc(msg)+'</div>'; }
+
+/* ===================== Section 4: 查询日志（仅超管） ===================== */
+const logTbl=document.getElementById('logTbl');
+const logErr=document.getElementById('logErr');
+document.getElementById('logRefresh').addEventListener('click',loadLogs);
+async function loadLogs(){
+  logErr.innerHTML='';
+  let data;
+  try{ data=await api('/query-logs/list',{limit:100}); }
+  catch(e){ logErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; return; }
+  let h='<thead><tr><th>时间</th><th>api_key</th><th>db</th><th>状态</th><th>行数</th><th>耗时ms</th><th>SQL</th><th>错误</th></tr></thead><tbody>';
+  (data.query_logs||[]).forEach(l=>{
+    const st=(l.Status||'');
+    const cls = st==='ok' ? 'st-ok' : 'st-bad';
+    let q=String(l.Query||''); if(q.length>120) q=q.slice(0,120)+'…';
+    h+='<tr><td class="muted">'+esc(l.TS)+'</td><td>'+esc(l.APIKeyName)+'</td><td>'+esc(l.DB)+'</td>'+
+       '<td class="'+cls+'">'+esc(st)+'</td><td>'+esc(l.RowCount)+'</td><td>'+esc(l.ElapsedMs)+'</td>'+
+       '<td style="font-family:ui-monospace,monospace">'+esc(q)+'</td><td class="st-bad">'+esc(l.Error||'')+'</td></tr>';
+  });
+  h+='</tbody>';
+  logTbl.innerHTML=h;
+}
+
+/* ----- Exec（仅超管，写库） ----- */
+async function loadExecDbs(){
+  const sel=document.getElementById('execDb');
+  try{
+    const data=await api('/exec/databases',{});
+    sel.innerHTML='';
+    (data.databases||[]).forEach(d=>{
+      const o=document.createElement('option');
+      o.value=d.name; o.textContent=d.name+'（'+d.driver+'）';
+      sel.appendChild(o);
+    });
+    if(!sel.options.length){
+      sel.innerHTML='<option value="">（无已配 write dsn 的库）</option>';
+    }
+  }catch(e){
+    document.getElementById('execErr').innerHTML='<div class="errstrip">'+esc(e.message)+'</div>';
+  }
+}
+document.getElementById('execRunBtn').addEventListener('click', async ()=>{
+  const db=document.getElementById('execDb').value;
+  const sql=document.getElementById('execSql').value.trim();
+  const errEl=document.getElementById('execErr'), outEl=document.getElementById('execResult');
+  errEl.innerHTML=''; outEl.textContent='';
+  if(!db){ errEl.innerHTML='<div class="errstrip">请选择连接</div>'; return; }
+  if(!sql){ errEl.innerHTML='<div class="errstrip">请输入 SQL</div>'; return; }
+  const btn=document.getElementById('execRunBtn');
+  btn.disabled=true; const old=btn.textContent; btn.textContent='执行中…';
+  try{
+    const r=await api('/exec', {db, sql});
+    outEl.textContent='执行成功，受影响行数：'+(r.rows_affected!=null?r.rows_affected:0);
+  }catch(e){
+    errEl.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>';
+  }finally{ btn.disabled=false; btn.textContent=old; }
+});
+
+/* ===================== Section 5: 个人中心（所有角色） ===================== */
+const mePassErr=document.getElementById('mePassErr');
+
+async function loadMe(){
+  let d;
+  try{ d=await api('/me',{}); }
+  catch(e){ document.getElementById('meName').textContent=e.message; return; }
+  document.getElementById('meName').textContent=d.username||'';
+  document.getElementById('meRole').textContent=roleCN(d.role);
+  document.getElementById('meKey').textContent=d.api_key||'';
+}
+
+document.getElementById('mePassBtn').addEventListener('click', async ()=>{
+  mePassErr.innerHTML='';
+  const oldp=document.getElementById('meOldPass').value, newp=document.getElementById('meNewPass').value;
+  if(!oldp || !newp){ mePassErr.innerHTML='<div class="errstrip">旧密码和新密码必填</div>'; return; }
+  try{ await api('/me/password',{old:oldp, new:newp}); }
+  catch(e){ mePassErr.innerHTML='<div class="errstrip">'+esc(e.message)+'</div>'; return; }
+  document.getElementById('meOldPass').value=''; document.getElementById('meNewPass').value='';
+  mePassErr.innerHTML='<div class="okstrip">密码已修改</div>';
+});
+
+/* ===================== boot ===================== */
+(async function boot(){
+  try{
+    const d=await api('/me',{});
+    ME.username=d.username; ME.role=d.role;
+  }catch(e){ /* 401 已跳转登录；其他错误下用空角色，仅默认 tab */ }
+  buildTabs();
+  renderWhoami();
+  initSection('browse');
+})();
+</script>
+</body>
+</html>

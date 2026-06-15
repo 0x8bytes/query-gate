@@ -1,0 +1,14 @@
+# 真实配置含密码，绝不入库
+config.yaml
+# 编译产物
+/server
+*.exe
+/bin/
+# 本地 SQLite 持久化（动态库、用户、敏感列、查询日志）
+*.db
+# 本地环境
+.env
+.cache/
+
+.claude/*
+docs/superpowers/

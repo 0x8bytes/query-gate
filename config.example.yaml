@@ -1,0 +1,41 @@
+server:
+  port: 8080
+  query_timeout: 30s
+  max_rows: 10000
+  log_level: info
+
+# 首次启动访问 /setup 创建第一个超级管理员（用户名+密码）。
+# session cookie 的 Secure 属性按请求自动判断（https→带，http→不带），无需配置。
+
+auth:
+  ip_whitelist:
+    - "*"            # * = 允许所有 IP；生产建议改为具体 IP 列表
+  # session JWT 签名密钥。留空则每次启动随机生成（重启后所有人需重新登录）。
+  # 生产建议设置为强随机字符串，例如: openssl rand -hex 32
+  jwt_secret: ""
+
+storage:
+  sqlite_path: /data/querygate.db
+
+log:
+  retention_days: 30
+
+# 数据库连接建议通过后台「数据库连接」页面运行时添加（存入 SQLite），config 保持干净。
+# 如需「启动种子库」（静态、只读、不可被 admin 删改），可在此列出 databases：
+# databases:
+#   - name: mydb           # 连接别名（你自取的代号，查询时用它指定连接）
+#     driver: mysql        # 支持 mysql / postgres / mongodb
+#     # 必须使用只读账号（仅授 SELECT/SHOW VIEW 等）作为物理兜底防线
+#     # DSN 示例：
+#     #   mysql:    user:pass@tcp(host:3306)/dbname
+#     #   postgres: postgres://user:pass@host:5432/dbname?sslmode=disable
+#     #   mongodb:  mongodb://user:pass@host:27017/dbname
+#     dsn: "readonly_user:password@tcp(host:3306)/dbname"
+#     description: 示例数据库
+# 写操作（/api/v1/exec）说明：
+#   - 写账号 DSN（exec_dsn）通过后台「数据库连接」表单的「写 DSN」字段配置，
+#     仅动态数据库连接支持。
+#   - 仅超级管理员可对已配 exec_dsn 的库执行 /api/v1/exec 写操作。
+#   - exec_dsn 与 jwt_secret 同等敏感（含可写账号口令），切勿提交 git。
+#   - 此处 YAML 种子库本期不支持 exec（仅 admin API 动态添加的库支持）。
+databases: []
