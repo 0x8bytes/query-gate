@@ -60,6 +60,40 @@ databases: []
 	}
 }
 
+// TestLoad_JWTSecretEnvOverridesConfig 校验：环境变量 JWT_SECRET 优先于 config 文件值。
+func TestLoad_JWTSecretEnvOverridesConfig(t *testing.T) {
+	t.Setenv("JWT_SECRET", "from-env")
+	p := writeTemp(t, `
+auth:
+  ip_whitelist: ["*"]
+  jwt_secret: "from-config"
+`)
+	cfg, err := Load(p)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Auth.JWTSecret != "from-env" {
+		t.Errorf("jwt_secret = %q, want env value %q", cfg.Auth.JWTSecret, "from-env")
+	}
+}
+
+// TestLoad_JWTSecretFallsBackToConfig 校验：环境变量为空时回退用 config 文件值。
+func TestLoad_JWTSecretFallsBackToConfig(t *testing.T) {
+	t.Setenv("JWT_SECRET", "")
+	p := writeTemp(t, `
+auth:
+  ip_whitelist: ["*"]
+  jwt_secret: "from-config"
+`)
+	cfg, err := Load(p)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Auth.JWTSecret != "from-config" {
+		t.Errorf("jwt_secret = %q, want config value %q", cfg.Auth.JWTSecret, "from-config")
+	}
+}
+
 func TestLoad_RejectsInvalidDuration(t *testing.T) {
 	p := writeTemp(t, `
 server:

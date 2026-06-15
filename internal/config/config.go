@@ -31,8 +31,8 @@ type ServerConfig struct {
 // AuthConfig 持有 IP 白名单与 session JWT 签名密钥。
 type AuthConfig struct {
 	IPWhitelist []string `yaml:"ip_whitelist"`
-	// JWTSecret 是 session JWT 的 HMAC 签名密钥。留空则启动时随机生成
-	// （重启后所有登录失效）。生产建议配一个固定强随机串，保证重启不掉线。
+	// JWTSecret 是 session JWT 的 HMAC 签名密钥，必须配置。
+	// 优先读环境变量 JWT_SECRET，为空才用此处；两者皆空则拒绝启动。
 	JWTSecret string `yaml:"jwt_secret"`
 }
 

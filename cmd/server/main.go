@@ -2,7 +2,6 @@
 package main
 
 import (
-	"crypto/rand"
 	"flag"
 	"fmt"
 	"log"
@@ -78,17 +77,12 @@ func main() {
 	// 3. 后台定时清理过期查询日志(每天一次)
 	go pruneLoop(st, cfg.Log.RetentionDays)
 
-	// JWT 签名密钥:优先用配置值;留空则随机生成(重启后登录失效)。
-	var secret []byte
-	if cfg.Auth.JWTSecret != "" {
-		secret = []byte(cfg.Auth.JWTSecret)
-	} else {
-		secret = make([]byte, 32)
-		if _, err := rand.Read(secret); err != nil {
-			log.Fatalf("generate server secret: %v", err)
-		}
-		log.Print("auth.jwt_secret 未配置,本次启动随机生成(重启将使所有登录失效;生产请在 config 配置固定值)")
+	// JWT 签名密钥:必须由环境变量 JWT_SECRET 或 config 的 auth.jwt_secret 提供
+	// (环境变量优先,已在 config 加载时处理)。两者皆空则拒绝启动。
+	if cfg.Auth.JWTSecret == "" {
+		log.Fatal("auth.jwt_secret 未配置:请设置环境变量 JWT_SECRET 或在 config 配置 auth.jwt_secret (生成: openssl rand -hex 32)")
 	}
+	secret := []byte(cfg.Auth.JWTSecret)
 
 	h := &handler.Handler{
 		Registry:     reg,
