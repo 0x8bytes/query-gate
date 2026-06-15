@@ -7,7 +7,7 @@ server:
 auth:
   ip_whitelist:
     - "*"            # * = 允许所有 IP；生产建议改为具体 IP 列表
-  jwt_secret: ""     #生产建议: openssl rand -hex 32
+  jwt_secret: ""     #  1生产建议: openssl rand -hex 32, 2 环境变量配置 JWT_SECRET 
 
 storage:
   sqlite_path: /data/querygate.db

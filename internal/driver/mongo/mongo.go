@@ -89,12 +89,32 @@ func (d *Driver) Schema(ctx context.Context, collections []string) (map[string]s
 		}
 		cur.Close(ctx)
 		if len(fields) == 0 {
-			notFound = append(notFound, c)
+			// 采样不到字段：集合可能不存在，也可能存在但为空。
+			// 用 ListCollectionNames 区分——存在但空的集合返回占位说明而非 notFound，
+			// 避免空集合在前端被当成 404/400 错误。
+			exists, err := d.collectionExists(ctx, c)
+			if err != nil {
+				return nil, nil, err
+			}
+			if !exists {
+				notFound = append(notFound, c)
+				continue
+			}
+			ddl[c] = "COLLECTION " + c + " (empty — no documents to infer schema)"
 			continue
 		}
 		ddl[c] = formatFields(c, fields)
 	}
 	return ddl, notFound, nil
+}
+
+// collectionExists 判断集合是否存在于当前数据库（用于区分「不存在」与「存在但为空」）。
+func (d *Driver) collectionExists(ctx context.Context, name string) (bool, error) {
+	names, err := d.client.Database(d.dbName).ListCollectionNames(ctx, bson.M{"name": name})
+	if err != nil {
+		return false, err
+	}
+	return len(names) > 0, nil
 }
 
 // mongoQuery 是 JSON 查询格式的结构体。
