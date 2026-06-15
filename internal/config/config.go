@@ -66,6 +66,7 @@ func Load(path string) (*Config, error) {
 	if err := cfg.parseDurations(); err != nil {
 		return nil, err
 	}
+	cfg.applyEnvOverrides()
 	cfg.applyDefaults()
 	if err := cfg.validate(); err != nil {
 		return nil, err
@@ -83,6 +84,14 @@ func (c *Config) parseDurations() error {
 	}
 	c.Server.QueryTimeout = d
 	return nil
+}
+
+// applyEnvOverrides 用环境变量覆盖敏感/部署相关配置。
+// 环境变量优先级高于 YAML，便于在 Railway 等平台不写入 config 文件即可注入密钥。
+func (c *Config) applyEnvOverrides() {
+	if v := os.Getenv("JWT_SECRET"); v != "" {
+		c.Auth.JWTSecret = v
+	}
 }
 
 func (c *Config) applyDefaults() {

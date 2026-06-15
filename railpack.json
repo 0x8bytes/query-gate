@@ -9,6 +9,6 @@
     }
   },
   "deploy": {
-    "startCommand": "sh -c 'if [ -n \"$CONFIG_YAML\" ]; then printf \"%s\" \"$CONFIG_YAML\" > config.yaml; fi; ./out -config ./config.yaml'"
+    "startCommand": "sh -c 'if [ -n \"$CONFIG_YAML\" ]; then printf \"%s\" \"$CONFIG_YAML\" > config.yaml; elif [ ! -f config.yaml ]; then cp config.example.yaml config.yaml; fi; ./out -config ./config.yaml'"
   }
 }

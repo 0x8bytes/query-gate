@@ -12,3 +12,4 @@ config.yaml
 
 .claude/*
 docs/superpowers/
+./query-nest.db
