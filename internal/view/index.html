@@ -6,6 +6,8 @@
 <title>QueryGate API</title>
 <style>
   :root { --bg:#fff; --fg:#1a1a1a; --fg2:#8a8a8a; --bd:#ebebeb; --accent:#2563eb; --mono:#f7f7f8; }
+  html[data-theme="dark"] { --bg:#1a1b1e; --fg:#e4e6eb; --fg2:#9097a1; --bd:#33363b; --accent:#60a5fa; --mono:#23252a; }
+  .theme-toggle { position: fixed; top: 14px; right: 120px; background: none; border: 1px solid var(--bd); border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: 14px; }
   body { font: 14px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
          color: var(--fg); background: var(--bg);
          max-width: 820px; margin: 0 auto; padding: 1.8rem 1.2rem; }
@@ -24,9 +26,18 @@
   a.admin-login { position: fixed; top: 16px; right: 24px; color: var(--accent); text-decoration: none; font-weight: 600; }
   a.admin-login:hover { text-decoration: underline; }
 </style>
+<script>
+  (function(){
+    var saved = localStorage.getItem('qg-theme');
+    var dark = saved ? saved === 'dark'
+                     : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (dark) document.documentElement.setAttribute('data-theme','dark');
+  })();
+</script>
 </head>
 <body>
 
+<button class="theme-toggle" id="themeBtn" title="切换主题">🌙</button>
 {{if .LoggedIn}}<a class="admin-login" href="/admin">用户中心 &rarr;</a>{{else}}<a class="admin-login" href="/admin/login">用户登录 &rarr;</a>{{end}}
 
 <h1>QueryGate</h1>
@@ -76,6 +87,19 @@ curl -XPOST -H "X-API-Key: $KEY" {{.BaseURL}}/api/v1/exec \
 <!-- Machine-readable contract for agents (no JS needed) -->
 <script type="application/json" id="api-contract">
 {{.Contract}}
+</script>
+<script>
+  var themeBtn = document.getElementById('themeBtn');
+  function syncThemeIcon(){
+    themeBtn.textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀️' : '🌙';
+  }
+  syncThemeIcon();
+  themeBtn.addEventListener('click', function(){
+    var dark = document.documentElement.getAttribute('data-theme')!=='dark';
+    document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+    localStorage.setItem('qg-theme', dark?'dark':'light');
+    syncThemeIcon();
+  });
 </script>
 
 </body>

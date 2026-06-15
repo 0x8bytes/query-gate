@@ -5,21 +5,33 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>QueryGate 登录</title>
 <style>
+  :root{--bg:#fafafa;--card:#fff;--bd:#ebebeb;--fg:#1a1a1a;--fg2:#8a8a8a;--accent:#2563eb;--accent2:#1d4ed8;--danger:#dc2626;--inp:#fff}
+  html[data-theme="dark"]{--bg:#1a1b1e;--card:#212327;--bd:#33363b;--fg:#e4e6eb;--fg2:#9097a1;--accent:#60a5fa;--accent2:#3b82f6;--danger:#f87171;--inp:#1a1b1e}
   *{box-sizing:border-box}
   body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
-       background:#fafafa;color:#1a1a1a;display:flex;min-height:100vh;align-items:center;justify-content:center}
-  .card{background:#fff;border:1px solid #ebebeb;border-radius:6px;padding:32px;width:320px}
+       background:var(--bg);color:var(--fg);display:flex;min-height:100vh;align-items:center;justify-content:center}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:32px;width:320px}
   h1{font-size:18px;margin:0 0 4px}
-  p.sub{color:#8a8a8a;font-size:13px;margin:0 0 20px}
+  p.sub{color:var(--fg2);font-size:13px;margin:0 0 20px}
   label{display:block;font-size:13px;margin-bottom:6px}
-  input{width:100%;padding:9px 11px;border:1px solid #ebebeb;border-radius:6px;font-size:14px;margin-bottom:16px}
-  input:focus{outline:none;border-color:#2563eb}
-  button{width:100%;padding:9px;background:#2563eb;color:#fff;border:0;border-radius:6px;font-size:14px;cursor:pointer}
-  button:hover{background:#1d4ed8}
-  .err{color:#dc2626;font-size:13px;margin-bottom:12px}
+  input{width:100%;padding:9px 11px;border:1px solid var(--bd);border-radius:6px;font-size:14px;margin-bottom:16px;background:var(--inp);color:var(--fg)}
+  input:focus{outline:none;border-color:var(--accent)}
+  button{width:100%;padding:9px;background:var(--accent);color:#fff;border:0;border-radius:6px;font-size:14px;cursor:pointer}
+  button:hover{background:var(--accent2)}
+  .err{color:var(--danger);font-size:13px;margin-bottom:12px}
+  .theme-toggle{position:fixed;top:14px;right:16px;background:none;border:1px solid var(--bd);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:14px;width:auto}
 </style>
+<script>
+  (function(){
+    var saved = localStorage.getItem('qg-theme');
+    var dark = saved ? saved === 'dark'
+                     : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (dark) document.documentElement.setAttribute('data-theme','dark');
+  })();
+</script>
 </head>
 <body>
+  <button class="theme-toggle" id="themeBtn" title="切换主题" type="button">🌙</button>
   <form class="card" method="post" action="/admin/login">
     <h1>QueryGate 登录</h1>
     <p class="sub">管理后台登录</p>
@@ -30,5 +42,18 @@
     <input type="password" name="password" autocomplete="current-password">
     <button type="submit">登录</button>
   </form>
+  <script>
+    var themeBtn = document.getElementById('themeBtn');
+    function syncThemeIcon(){
+      themeBtn.textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀️' : '🌙';
+    }
+    syncThemeIcon();
+    themeBtn.addEventListener('click', function(){
+      var dark = document.documentElement.getAttribute('data-theme')!=='dark';
+      document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+      localStorage.setItem('qg-theme', dark?'dark':'light');
+      syncThemeIcon();
+    });
+  </script>
 </body>
 </html>

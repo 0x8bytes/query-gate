@@ -5,7 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>QueryGate 管理后台</title>
 <style>
-  :root{--bg:#fff;--bg2:#fafafa;--bd:#ebebeb;--fg:#1a1a1a;--fg2:#8a8a8a;--accent:#2563eb;--accent2:#1d4ed8;--sel:#eef2ff;--danger:#dc2626;--mono:#f7f7f8}
+  :root{--bg:#fff;--bg2:#fafafa;--bd:#ebebeb;--fg:#1a1a1a;--fg2:#8a8a8a;--accent:#2563eb;--accent2:#1d4ed8;--sel:#eef2ff;--danger:#dc2626;--mono:#f7f7f8;
+        --hover:#f0f0f0;--card:#fff;--selbd:#c7d2fe;
+        --ok-bg:#f0fdf4;--ok-bd:#bbf7d0;--ok-fg:#15803d;
+        --warn-bg:#fffbeb;--warn-bd:#fde68a;--warn-fg:#b45309;
+        --err-bg:#fef2f2;--err-bd:#fecaca;--del-hover:#fef2f2;
+        --dis-bg:#f4f4f5}
+  html[data-theme="dark"]{--bg:#1a1b1e;--bg2:#212327;--bd:#33363b;--fg:#e4e6eb;--fg2:#9097a1;--accent:#60a5fa;--accent2:#3b82f6;--sel:#1e293b;--danger:#f87171;--mono:#23252a;
+        --hover:#2a2d33;--card:#212327;--selbd:#3b4d6b;
+        --ok-bg:#0f2417;--ok-bd:#1f5236;--ok-fg:#4ade80;
+        --warn-bg:#2a2110;--warn-bd:#55421a;--warn-fg:#fbbf24;
+        --err-bg:#2a1416;--err-bd:#5a262b;--del-hover:#2a1416;
+        --dis-bg:#2a2d33}
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -22,7 +33,7 @@
   .whoami{font-size:13px;color:var(--fg2)}
   .whoami b{color:var(--fg);font-weight:600}
   .rolechip{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;font-size:12px;border:1px solid var(--bd);background:var(--bg2)}
-  .rolechip.super{color:var(--accent);border-color:#c7d2fe;background:var(--sel)}
+  .rolechip.super{color:var(--accent);border-color:var(--selbd);background:var(--sel)}
   .logout{padding:6px 12px;border:1px solid var(--bd);background:var(--bg);border-radius:6px;cursor:pointer;font-size:13px;color:var(--fg)}
   .logout:hover{background:var(--bg2)}
   /* sections */
@@ -35,7 +46,7 @@
   button.ghost{padding:6px 10px;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:6px;cursor:pointer;font-size:13px}
   button.ghost:hover{background:var(--bg2)}
   button.del{padding:5px 10px;background:var(--bg);color:var(--danger);border:1px solid var(--bd);border-radius:6px;cursor:pointer;font-size:13px}
-  button.del:hover{background:#fef2f2}
+  button.del:hover{background:var(--del-hover)}
   input.inp,select.inp{padding:8px 10px;border:1px solid var(--bd);border-radius:6px;font-size:13px;font-family:inherit}
   input.inp:focus,select.inp:focus{outline:none;border-color:var(--accent)}
   table{border-collapse:collapse;width:100%;font-size:13px}
@@ -49,21 +60,21 @@
   .merow{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--bd)}
   .merow:last-of-type{border-bottom:0}
   .melab{flex:0 0 72px;color:var(--fg2);font-size:13px}
-  .mekey{flex:1;background:#fff;border:1px solid var(--bd);border-radius:6px;padding:6px 10px}
-  .okstrip{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
-  .warnstrip{background:#fffbeb;border:1px solid #fde68a;color:#b45309;padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
-  .errstrip{background:#fef2f2;border:1px solid #fecaca;color:var(--danger);padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
+  .mekey{flex:1;background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:6px 10px}
+  .okstrip{background:var(--ok-bg);border:1px solid var(--ok-bd);color:var(--ok-fg);padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
+  .warnstrip{background:var(--warn-bg);border:1px solid var(--warn-bd);color:var(--warn-fg);padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
+  .errstrip{background:var(--err-bg);border:1px solid var(--err-bd);color:var(--danger);padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
   /* === section 1: 表浏览 === */
   #s-browse{flex-direction:row}
   .tree{width:260px;flex:0 0 260px;background:var(--bg2);border-right:1px solid var(--bd);overflow:auto;padding:6px 0}
   .tnode{padding:5px 12px;cursor:pointer;white-space:nowrap;user-select:none}
-  .tnode:hover{background:#f0f0f0}
+  .tnode:hover{background:var(--hover)}
   .tnode .drv{color:var(--fg2);font-size:12px;margin-left:6px}
   .tchild{display:none}
   .tchild.open{display:block}
   .tcat{padding:4px 12px 4px 24px;color:var(--fg2);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
   .tleaf{padding:4px 12px 4px 30px;cursor:pointer;white-space:nowrap}
-  .tleaf:hover{background:#f0f0f0}
+  .tleaf:hover{background:var(--hover)}
   .tleaf.sel{background:var(--sel);color:var(--accent)}
   .tleaf .cmt{color:var(--fg2);font-size:12px;margin-left:6px}
   .rpane{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -87,14 +98,24 @@
   .formcard .frow{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
   .formcard label{font-size:13px;color:var(--fg)}
   .hidden{display:none}
-  .keycard{background:var(--sel);border:1px solid #c7d2fe;border-radius:6px;padding:14px;margin-bottom:14px;max-width:560px}
-  .keycard .kv{font-family:ui-monospace,monospace;font-size:13px;background:#fff;border:1px solid var(--bd);border-radius:6px;padding:8px 10px;word-break:break-all;margin:6px 0}
-  .st-ok{color:#15803d}
+  .keycard{background:var(--sel);border:1px solid var(--selbd);border-radius:6px;padding:14px;margin-bottom:14px;max-width:560px}
+  .keycard .kv{font-family:ui-monospace,monospace;font-size:13px;background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:8px 10px;word-break:break-all;margin:6px 0}
+  .st-ok{color:var(--ok-fg)}
   .st-bad{color:var(--danger)}
   .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;border:1px solid var(--bd)}
-  .badge.en{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
-  .badge.dis{color:var(--fg2);background:#f4f4f5}
+  .badge.en{color:var(--ok-fg);border-color:var(--ok-bd);background:var(--ok-bg)}
+  .badge.dis{color:var(--fg2);background:var(--dis-bg)}
 </style>
+<script>
+  // 早执行：在首屏渲染前应用主题，避免亮色闪烁。
+  // 优先 localStorage 用户选择；无则跟随系统 prefers-color-scheme。
+  (function(){
+    var saved = localStorage.getItem('qg-theme');
+    var dark = saved ? saved === 'dark'
+                     : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (dark) document.documentElement.setAttribute('data-theme','dark');
+  })();
+</script>
 </head>
 <body>
   <div class="topbar">
@@ -102,6 +123,7 @@
     <div class="tabs" id="tabs"></div>
     <div class="spacer"></div>
     <span class="whoami" id="whoami"></span>
+    <button class="logout" id="themeBtn" title="切换主题" style="padding:6px 10px">🌙</button>
     <button class="logout" id="logoutBtn">退出</button>
   </div>
 
@@ -297,6 +319,19 @@ function renderWhoami(){
 document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   try{ await fetch('/admin/logout',{method:'POST'}); }catch(e){}
   location='/admin/login';
+});
+
+/* 主题切换：图标反映当前主题，点击在亮/暗间切换并持久化。 */
+const themeBtn = document.getElementById('themeBtn');
+function syncThemeIcon(){
+  themeBtn.textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀️' : '🌙';
+}
+syncThemeIcon();
+themeBtn.addEventListener('click', ()=>{
+  const dark = document.documentElement.getAttribute('data-theme')!=='dark';
+  document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+  localStorage.setItem('qg-theme', dark?'dark':'light');
+  syncThemeIcon();
 });
 
 /* ===================== Section 1: 表浏览 ===================== */
