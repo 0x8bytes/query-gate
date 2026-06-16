@@ -7,7 +7,9 @@
 <style>
   :root { --bg:#fff; --fg:#1a1a1a; --fg2:#8a8a8a; --bd:#ebebeb; --accent:#2563eb; --mono:#f7f7f8; }
   html[data-theme="dark"] { --bg:#1a1b1e; --fg:#e4e6eb; --fg2:#9097a1; --bd:#33363b; --accent:#60a5fa; --mono:#23252a; }
-  .theme-toggle { position: fixed; top: 14px; right: 120px; background: none; border: 1px solid var(--bd); border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: 14px; }
+  .topnav { position: fixed; top: 16px; right: 28px; display: flex; align-items: center; gap: 12px; z-index: 10; }
+  .theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: none; border: 1px solid var(--bd); border-radius: 8px; cursor: pointer; font-size: 15px; line-height: 1; color: var(--fg); }
+  .theme-toggle:hover { background: var(--mono); }
   body { font: 14px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
          color: var(--fg); background: var(--bg);
          max-width: 820px; margin: 0 auto; padding: 1.8rem 1.2rem; }
@@ -23,7 +25,7 @@
   table { border-collapse: collapse; width: 100%; margin: .3rem 0; }
   th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid var(--bd); }
   th { color: var(--fg2); font-weight: 600; }
-  a.admin-login { position: fixed; top: 16px; right: 24px; color: var(--accent); text-decoration: none; font-weight: 600; }
+  a.admin-login { color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; }
   a.admin-login:hover { text-decoration: underline; }
 </style>
 <script>
@@ -37,8 +39,10 @@
 </head>
 <body>
 
-<button class="theme-toggle" id="themeBtn" title="切换主题">🌙</button>
-{{if .LoggedIn}}<a class="admin-login" href="/admin">用户中心 &rarr;</a>{{else}}<a class="admin-login" href="/admin/login">用户登录 &rarr;</a>{{end}}
+<div class="topnav">
+  <button class="theme-toggle" id="themeBtn" title="切换主题">🌙</button>
+  {{if .LoggedIn}}<a class="admin-login" href="/admin">用户中心 &rarr;</a>{{else}}<a class="admin-login" href="/admin/login">用户登录 &rarr;</a>{{end}}
+</div>
 
 <h1>QueryGate</h1>
 <p class="sub">多驱动只读查询 API（mysql / postgres / mongodb）· base URL: <code>{{.BaseURL}}</code></p>

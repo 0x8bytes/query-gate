@@ -2,14 +2,14 @@
 package router
 
 import (
-	"path/filepath"
-	"runtime"
+	"html/template"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/0x8bytes/query-gate/internal/handler"
 	"github.com/0x8bytes/query-gate/internal/middleware"
 	"github.com/0x8bytes/query-gate/internal/model"
+	"github.com/0x8bytes/query-gate/internal/view"
 )
 
 // Setup 构建并返回配置好的 gin 引擎(*gin.Engine 实现 http.Handler)。
@@ -18,7 +18,7 @@ func Setup(h *handler.Handler) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	_ = r.SetTrustedProxies(nil) // ClientIP 用 RemoteAddr
-	r.LoadHTMLGlob(viewGlob())   // 运行时加载 internal/view/*.html 视图模板
+	r.SetHTMLTemplate(template.Must(template.ParseFS(view.FS, "*.html"))) // 加载 go:embed 嵌入的视图模板
 	register(h, r)
 	return r
 }
@@ -82,19 +82,3 @@ func register(h *handler.Handler, r *gin.Engine) {
 	}
 }
 
-// viewGlob 返回视图模板的 glob 路径,兼容从仓库根目录启动与测试 CWD 两种情况。
-func viewGlob() string {
-	const rel = "internal/view/*.html"
-	if m, _ := filepath.Glob(rel); len(m) > 0 {
-		return rel
-	}
-	// 本文件位于 internal/router/router.go;模板在 internal/view/。
-	_, thisFile, _, ok := runtime.Caller(0)
-	if ok {
-		abs := filepath.Join(filepath.Dir(thisFile), "..", "view", "*.html")
-		if m, _ := filepath.Glob(abs); len(m) > 0 {
-			return abs
-		}
-	}
-	return rel
-}
